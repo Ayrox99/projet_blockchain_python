@@ -8,3 +8,6 @@
 [submodule "pybind11_json"]
 	path = pybind11_json
 	url = https://github.com/pybind/pybind11_json.git
+[submodule "signature"]
+	path = signature
+	url = https://github.com/HenriAycard/projet_blockchain_python
