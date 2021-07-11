@@ -2,8 +2,9 @@
   "ExpandedNodes": [
     "",
     "\\animal",
+    "\\membre",
     "\\transaction"
   ],
-  "SelectedNode": "\\transaction\\transaction_component.h",
+  "SelectedNode": "\\animal\\Makefile",
   "PreviewInSolutionExplorer": false
 }

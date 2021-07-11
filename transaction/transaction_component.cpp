@@ -110,11 +110,11 @@ list<UTXO> TX::faireTransaction(const nlohmann::json& j)) {
 		txi.nUtxo = *it["nUtxo"];
 		utxo.nUTX0 = *it["nUtxo"];
 
-		txi.signature = *it["signature"]; //TODO vérifier
+		txi.signature = *it["signature"]; //impossible d'utiliser la fct du composent Signature qui attend un string représentant TXI ?
 
 		utxo.montant = *it["montant"];
 		utxo.owner = *it["owner"];
-		utxo.hash = *it["hash"]; //TODO vérifier
+		utxo.hash = *it["hash"]; // à voir si c'est pas à nous de le calculer
 
 		TXIs.push_back(txi);
 		imputUTXOs.push_back(utxo);
