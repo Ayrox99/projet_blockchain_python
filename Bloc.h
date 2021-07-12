@@ -43,7 +43,6 @@ class UTXO // une sortie non d�pens�e
     int nUTX0;        // numero de l'UTXO dans lla transaction
     int montant;      // montant de la transaction
   unsigned char owner[PUBLIC_KEY_SIZE];  //	cl� publique du compte destinataire (le nouveau proprietaire)
-  unsigned char hash[HASH_SIZE];    // hash(nBloc,nTx,nUTXO,montant,destinataire) pour securisation de l'UTXO
   py::object to_json() const;
 
 };

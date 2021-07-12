@@ -1,5 +1,5 @@
 #include "../Bloc.h"
-#include <vector>
+#include "../signature/signature_component/signature_component.h"
 #include <cstdlib>
 #include "signature_component.h"
 
@@ -22,7 +22,6 @@ py::object UTXO::to_json() const {
 	utxo["nUtxo"] = nUtxo;
 	utxo["montant"] = montant;
 	utxo["owner"] = owner;
-	utxo["hash"] = hash;
 	return utxo;
 }
 
@@ -32,8 +31,8 @@ TX::TX(const nlohmann::json& j) {
 	for (nlohmann::json::const_iterator it = imputJson.begin(); it != imputJson.end(); ++it) { //on récupére les TXI des inputs
 
 		nlohmann::json txiJson = j["txi"];
-		for (nlohmann::json::const_iterator it1 = txiJson.begin(); it1 != txiJson.end(); ++it) {
-			TXI txi = new TXI();
+		for (nlohmann::json::const_iterator it1 = txiJson.begin(); it1 != txiJson.end(); ++it1) {
+			TXI txi;
 			txi.nBloc = *it1["nBloc"];
 			txi.nTx = *it1["nTx"];
 			txi.nUtxo = *it1["nUtxo"];
@@ -42,27 +41,25 @@ TX::TX(const nlohmann::json& j) {
 		}
 
 		nlohmann::json utxoJson = j["utxo"];
-		for (nlohmann::json::const_iterator it1 = utxoJson.begin(); it1 != utxoJson.end(); ++it) {
-			TXI utxo = new UTXO();
+		for (nlohmann::json::const_iterator it1 = utxoJson.begin(); it1 != utxoJson.end(); ++it1) {
+			UTXO utxo;
 			utxo.nBloc = *it1["nBloc"];
 			utxo.nTx = *it1["nTx"];
 			utxo.nUTX0 = *it1["nUtxo"];
 			utxo.montant = *it1["montant"];
 			utxo.owner = *it1["owner"];
-			utxo.hash = *it1["hash"];
 			imputUTXOs.push_back(utxo);
 		}
 	}
 
 	nlohmann::json outputJson = j["outputs"];
 	for (nlohmann::json::const_iterator it = outputJson.begin(); it != outputJson.end(); ++it) { //on récupére les couples montant-destinataire
-		TXI utxo = new UTXO();
+		UTXO utxo;
 		utxo.nBloc = *it["nBloc"];
 		utxo.nTx = *it["nTx"];
 		utxo.nUTX0 = *it["nUtxo"];
 		utxo.montant = *it["montant"];
-		utxo.owner = *it["destinataire"];
-		utxo.hash = *it["hash"];
+		utxo.owner = *it["owner"];
 		outputUTXOs.push_back(utxo);
 	}
 
@@ -98,8 +95,8 @@ list<UTXO> TX::faireTransaction(const nlohmann::json& j)) {
 
 	nlohmann::json imputJson = j["imputs"];
 	for (nlohmann::json::const_iterator it = imputJson.begin(); it != imputJson.end(); ++it) { //on récupére les TXI des inputs
-		TXI txi = new TXI();
-		TXI utxo = new UTXO();
+		TXI txi;
+		UTXO utxo;
 
 		txi.nBloc = *it["nBloc"];
 		utxo.nBloc = *it["nBloc"];
@@ -110,11 +107,13 @@ list<UTXO> TX::faireTransaction(const nlohmann::json& j)) {
 		txi.nUtxo = *it["nUtxo"];
 		utxo.nUTX0 = *it["nUtxo"];
 
-		txi.signature = *it["signature"]; //impossible d'utiliser la fct du composent Signature qui attend un string représentant TXI ?
+		txi.signature = ""; 
 
 		utxo.montant = *it["montant"];
 		utxo.owner = *it["owner"];
-		utxo.hash = *it["hash"]; // à voir si c'est pas à nous de le calculer
+
+		Signature s;
+		txi.signature = s.signMessage(txi.to_json(), utxo.owner);
 
 		TXIs.push_back(txi);
 		imputUTXOs.push_back(utxo);
@@ -124,7 +123,7 @@ list<UTXO> TX::faireTransaction(const nlohmann::json& j)) {
 
 	nlohmann::json outputJson = j["outputs"];
 	for (nlohmann::json::const_iterator it = outputJson.begin(); it != outputJson.end(); ++it) { //on récupére les couples montant-destinataire
-		TXI utxo = new UTXO();
+		UTXO utxo;
 		utxo.nBloc = -1;
 		utxo.nTx = -1;
 		utxo.nUTX0 = rand();
@@ -139,17 +138,30 @@ list<UTXO> TX::faireTransaction(const nlohmann::json& j)) {
 		throw runtime_error("Somme des outputs trop grand par rapport aux imputs");
 	}
 
-	TXI utxo = new UTXO();
+	UTXO utxo;
 	utxo.nBloc = -1;
 	utxo.nTx = -1;
 	utxo.nUTX0 = rand();
 	utxo.montant = montantImputs - montantOutputs;
-	//utxo.owner = ;//clé du mineur 
+	utxo.owner = ""; //clé du mineur 
 	outputUTXOs.push_back(utxo);
 }
 
 bool TX::verifierTransaction() {
+	Signature s;
+	int i = 0;
+	for (list<TXI>::const_iterator it1 = TXIs.begin(); it1 != TXIs.end(); ++it1) {
+		int j = 0;
+		for (list<UTXO>::const_iterator it2 = imputUTXOs.begin(); it2 != imputUTXOs.end(); ++it2) {
+			if ( (i == j) && !(s.validateSignature( (*it1).to_json(), (*it2).owner, (*it1).signature) ) ) {
+				return false;
+			}
+			j++;
+		}
+		i++;
+	}
 	return true;
+	
 }
 
 //-------------------------------------------
@@ -162,7 +174,6 @@ TXM::TXM(const nlohmann::json& j) {
 		utxo.nUTX0 = *it["nUtxo"];
 		utxo.montant = *it["montant"];
 		utxo.owner = *it["owner"];
-		utxo.hash = *it["hash"];
 	}
 }
 

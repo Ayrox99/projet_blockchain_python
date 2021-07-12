@@ -3,8 +3,6 @@ LIBS=-lpython3.7m
 
 COMPOSANT = transaction_component
 
-CPPFLAGS += -I../signature_component
-
 LIBSO = ${COMPOSANT}.so
 LIBSO_OBJS = ${COMPOSANT}.o
 
